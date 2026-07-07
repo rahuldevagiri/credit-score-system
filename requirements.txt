@@ -1,0 +1,16 @@
+# Core ML / data stack
+pandas>=2.2
+numpy>=2.0
+scikit-learn>=1.5
+matplotlib>=3.9
+shap>=0.46
+joblib>=1.4
+
+# Testing & coverage (Week-3 requirement: >=80% coverage)
+pytest>=8.0
+pytest-cov>=5.0
+
+# Notebook (the presentation deliverable)
+nbformat>=5.10
+nbconvert>=7.16
+ipykernel>=6.29

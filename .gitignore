@@ -1,0 +1,11 @@
+# Python build artifacts
+__pycache__/
+*.pyc
+
+# Test / coverage artifacts
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
