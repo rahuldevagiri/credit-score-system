@@ -13,7 +13,8 @@ This project builds a credit-risk classification system on the German Credit Dat
 1. The model **fails the 80% disparate-impact rule for age** (ratio 0.56): applicants aged ≤25 are wrongly denied credit at 54.5%, more than double the rate of 26–60-year-olds (24.5%).
 2. Fairness by sex is borderline (disparate impact 0.83); creditworthy women are wrongly denied at 36.8% vs 26.9% for men.
 3. A simple **mitigation — group-specific decision thresholds — repaired the sex disparity almost completely** (disparate impact 0.83 → 0.98) at no accuracy cost, demonstrating that measured bias is actionable.
-4. SHAP explanations confirm the model reasons primarily from financial signals (checking account, duration, amount) but also uses Sex directly — motivating continuous fairness monitoring regardless of feature choices.
+4. Bringing in the **full 20-feature UCI dataset** both raises performance (ROC-AUC 0.774 → 0.790) and exposes a **third bias the 9-feature subset cannot show**: foreign workers are approved at 59% vs 81% for non-foreign workers (disparate impact 0.73 — also a failure).
+5. SHAP explanations confirm the model reasons primarily from financial signals (checking account, duration, amount) but also uses Sex directly — motivating continuous fairness monitoring regardless of feature choices.
 
 The system is designed as **decision support with a human in the loop**, consistent with the EU AI Act's classification of credit scoring as high-risk and GDPR Art. 22's right to explanation.
 
@@ -93,6 +94,24 @@ The disparity is nearly eliminated at zero accuracy cost and a 3-point recall co
 
 Artifacts: [fairness_group_metrics.png](results/fairness_group_metrics.png), [fairness_approval_rates.png](results/fairness_approval_rates.png), CSV tables in `results/`.
 
+### 5.1 Extended model — the full 20-feature UCI dataset
+
+The Kaggle file is a 9-feature subset. To honour the brief's *"if you can find additional information, use it"*, we also decoded the **original UCI file** ([data/german.data](data/german.data)) — 20 features including credit history, employment length, and two sensitive attributes the subset omits: personal status & sex, and **foreign-worker status** ([src/full_uci.py](src/full_uci.py)). The same Random Forest, on the same hold-out split, improves with the richer data:
+
+| Feature set | Accuracy | Precision | Recall | F1 | ROC-AUC |
+|---|---|---|---|---|---|
+| Kaggle subset (9 features) | 0.695 | 0.494 | 0.700 | 0.579 | 0.774 |
+| **Full UCI (20 features)** | 0.705 | 0.506 | **0.733** | **0.599** | **0.790** |
+
+More consequentially, the full data unlocks a fairness slice **the subset structurally cannot produce**:
+
+| Group | n | Approval rate | TPR (bad detected) | FPR (good denied) |
+|---|---|---|---|---|
+| Foreign worker = yes | 963 | 0.588 | 0.703 | 0.283 |
+| Foreign worker = no | 37 | **0.811** | 0.500 | 0.152 |
+
+Foreign workers are approved at 58.8% versus 81.1% for non-foreign workers — **disparate impact 0.73, a fresh failure of the 80% rule**. Because ~96% of applicants are foreign workers, the *advantaged* group is a fragile 37-person minority. The lesson reinforces the audit's core thesis: had we simply dropped the sensitive column, this disparity would have been hidden, not removed. Top drivers of the richer model (checking status 0.18, duration 0.10, credit amount 0.10, age 0.07, employment length 0.06, credit history 0.04) confirm the added features carry genuine signal. Artifact: [full_uci_comparison.png](results/full_uci_comparison.png), [full_uci_fairness.csv](results/full_uci_fairness.csv).
+
 ## 6. Explainability
 
 ([src/explainability.py](src/explainability.py)) — SHAP TreeExplainer on the Random Forest.
@@ -111,19 +130,21 @@ Artifacts: [fairness_group_metrics.png](results/fairness_group_metrics.png), [fa
 
 ## 8. Limitations & Future Work
 
-1. **Feature subset:** the Kaggle version lacks 11 UCI features (notably credit history); rerunning on [data/german.data](data/german.data) would raise performance and enable a foreign-worker fairness audit.
-2. **Age mitigation:** apply and document group-threshold (or reweighing/in-processing) mitigation for age bands — the largest measured harm.
-3. **Small subgroups:** >60 (n=45) estimates are fragile; report confidence intervals.
-4. **Intersectionality:** audit joint groups (young women, etc.), where disparities often compound.
-5. **Threshold as policy:** formalize the 5:1 cost matrix into an explicit, documented decision-threshold policy.
+1. **Age & foreign-worker mitigation:** apply and document group-threshold (or reweighing/in-processing) mitigation for age bands *and* foreign-worker status — the two largest measured harms. The technique is already demonstrated on Sex (§5); extending it is mechanical.
+2. **Small subgroups:** >60 (n=45) and non-foreign workers (n=37) estimates are fragile; report confidence intervals.
+3. **Intersectionality:** audit joint groups (young women, young foreign workers, etc.), where disparities often compound.
+4. **Threshold as policy:** formalize the 5:1 cost matrix into an explicit, documented decision-threshold policy.
+5. **Productionisation:** implement event logging (AI Act Art. 12) and post-market monitoring (Art. 72) for distribution shift.
 
 ## 9. Reproducibility
 
 ```
-pip install pandas scikit-learn matplotlib shap
+pip install -r requirements.txt   # exact version pins → figures reproduce
 python src/train_baseline.py     # models + metrics + ROC/confusion charts
 python src/fairness_audit.py     # group fairness + mitigation experiment
 python src/explainability.py     # SHAP global/local + LR coefficients
+python src/full_uci.py           # 20-feature model + foreign-worker fairness
+python -m pytest                 # 38 tests, 98.7% coverage (enforced ≥80%)
 ```
 
-All outputs land in `results/`; fitted pipelines in `models/`.
+All outputs land in `results/`; fitted pipelines in `models/`. `requirements.txt` pins exact library versions so a clean install reproduces the exact figures quoted in this report — the whole analysis also runs end-to-end in [Responsible_AI_Credit_Scoring.ipynb](Responsible_AI_Credit_Scoring.ipynb) via *Restart & Run All*.

@@ -30,10 +30,14 @@ Recall is prioritized because approving a bad credit costs the bank roughly 5× 
 |---|---|---|---|
 | Sex | 0.83 — borderline pass | 0.03 | 0.10 |
 | Age band | **0.56 — fail** | 0.28 | 0.30 |
+| Foreign worker †| **0.73 — fail** | 0.20 | 0.20 |
+
+† Foreign-worker status exists only in the full 20-feature UCI dataset ([src/full_uci.py](src/full_uci.py)), not the 9-feature Kaggle subset the primary model uses. The 20-feature model also outperforms the subset (ROC-AUC 0.790 vs 0.774, recall 0.73 vs 0.70).
 
 - Female applicants are wrongly denied (FPR) at 36.8% vs 26.9% for males.
 - Applicants aged ≤25 face a 54.5% wrongful-denial rate vs 24.5% for ages 26–60 — the dominant fairness problem.
-- **Mitigation demonstrated:** group-specific decision thresholds equalizing FPR across Sex raised the disparate-impact ratio from 0.83 to 0.98 with no accuracy loss (0.70 → 0.71) and a small recall cost (0.70 → 0.66). An equivalent intervention for age bands is required before any real-world use.
+- Foreign workers are approved at 58.8% vs 81.1% for non-foreign workers; since ~96% of applicants are foreign workers, the advantaged group is a fragile 37-person minority.
+- **Mitigation demonstrated:** group-specific decision thresholds equalizing FPR across Sex raised the disparate-impact ratio from 0.83 to 0.98 with no accuracy loss (0.70 → 0.71) and a small recall cost (0.70 → 0.66). Equivalent interventions for age bands and foreign-worker status are required before any real-world use.
 - The model currently sees Sex and Age as features; SHAP confirms a small direct effect of Sex (mean |SHAP| ≈ 0.012, male lowers predicted risk). Removing them would **not** remove bias (proxies remain) — group auditing stays mandatory either way.
 
 ## Explainability
@@ -44,5 +48,5 @@ Recall is prioritized because approving a bad credit costs the bank roughly 5× 
 ## Ethical Considerations & Caveats
 - Credit scoring is classified **high-risk under the EU AI Act**: human oversight, logging, documentation, and fairness monitoring are legal obligations, not optional features.
 - Historical-bias inheritance: the young-applicant penalty reflects and would amplify past lending patterns if deployed unaudited.
-- Small subgroups (>60: n=45; female-bad: n=95 across folds) make fairness estimates for those groups statistically fragile.
+- Small subgroups (>60: n=45; non-foreign workers: n=37; female-bad: n=95 across folds) make fairness estimates for those groups statistically fragile.
 - Every prediction should be logged with inputs, score, and explanation for auditability and contestability.

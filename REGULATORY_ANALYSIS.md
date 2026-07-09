@@ -48,7 +48,7 @@ show we understood the deployer's position too.
 | **Record-keeping / logging** — automatic event logging | Art. 12 | Design: each prediction is emitted with inputs, score and a SHAP explanation suitable for logging (see §7 of REPORT). *Gap:* a production logger is future work |
 | **Transparency & information to deployers** | Art. 13 | [MODEL_CARD.md](MODEL_CARD.md): intended use, out-of-scope uses, performance, and fairness caveats |
 | **Human oversight** — designed to be effectively overseen | Art. 14 | System is *decision support*: it outputs recommendation + explanation + fairness context; a loan officer holds final authority. Never issues an autonomous decision (MODEL_CARD "Intended Use") |
-| **Accuracy, robustness & cybersecurity** | Art. 15 | Performance metrics (cost-sensitive recall) in REPORT §4; **robustness/security quantified** by the poisoning, evasion, and membership-inference studies in [src/adversarial.py](src/adversarial.py); reproducibility guarded by the test suite (`tests/`, 98% coverage) |
+| **Accuracy, robustness & cybersecurity** | Art. 15 | Performance metrics (cost-sensitive recall) in REPORT §4; **robustness/security quantified** by the poisoning, evasion, and membership-inference studies in [src/adversarial.py](src/adversarial.py); reproducibility guarded by the test suite (`tests/`, 38 tests, 98.7% coverage) |
 
 ### Art. 10 in depth — the bias obligation
 
@@ -56,12 +56,18 @@ Art. 10(2)(f)–(g) requires examination for possible biases and their
 mitigation. This is exactly what the fairness audit does:
 
 - **Detection:** disparate impact, equal-opportunity gap and equalized-odds
-  gap computed by Sex and Age band ([src/fairness_audit.py](src/fairness_audit.py)).
-- **Finding:** the model **fails the 80% rule for age** (ratio 0.56) and is
-  borderline for sex (0.83).
+  gap computed by Sex and Age band ([src/fairness_audit.py](src/fairness_audit.py)),
+  and — on the full 20-feature UCI data — by **foreign-worker status**
+  ([src/full_uci.py](src/full_uci.py)).
+- **Finding:** the model **fails the 80% rule for age** (ratio 0.56) and for
+  **foreign-worker status** (0.73), and is borderline for sex (0.83). The
+  foreign-worker disparity is a direct anti-discrimination concern (a proxy for
+  nationality/origin) that the 9-feature subset structurally cannot even surface
+  — evidence that data governance and feature scope are themselves bias controls.
 - **Mitigation:** group-specific thresholds repair the sex disparity
   (0.83 → 0.98) at no accuracy cost — a documented, owned decision, exactly
-  the "examination and mitigation of biases" the Article demands.
+  the "examination and mitigation of biases" the Article demands. The same
+  technique is scheduled for age and foreign-worker status.
 
 ### Art. 14 in depth — human oversight
 
@@ -131,9 +137,10 @@ our fairness audit and human-oversight design already align with.
 | Technical documentation (Annex IV) | ✅ Done | this file, REPORT, MODEL_CARD |
 | Transparency / explainability | ✅ Done | explainability.py, SHAP artifacts |
 | Human oversight design | ✅ Done | MODEL_CARD "Intended Use" |
-| Accuracy, robustness & security | ✅ Done | adversarial.py, test suite (98% cov) |
+| Accuracy, robustness & security | ✅ Done | adversarial.py, test suite (38 tests, 98.7% cov) |
 | Fairness — sex | ✅ Mitigated | mitigation_comparison.csv |
-| Fairness — age | ⚠️ **Open** | fails 80% rule; mitigation is the top future-work item |
+| Fairness — age | ⚠️ **Open** | fails 80% rule; mitigation is a top future-work item |
+| Fairness — foreign worker | ⚠️ **Open** | full_uci.py: fails 80% rule (DI 0.73); found only via the full dataset |
 | Automatic event logging (Art. 12) | ⚠️ **Design-only** | logging hook not implemented |
 | Post-market monitoring (Art. 72) | ⚠️ **Future** | needs a deployment to monitor |
 | Conformity assessment / CE marking | ➖ N/A for a student project | would precede real deployment |
@@ -141,6 +148,7 @@ our fairness audit and human-oversight design already align with.
 **Bottom line.** The system is engineered to be *compliant by construction*
 for a high-risk credit-scoring use case: the legally hard parts — bias
 examination, explainability, human oversight, robustness — are implemented
-and evidenced. The two honest residual gaps (age-fairness mitigation and a
-production logging/monitoring layer) are named explicitly rather than hidden,
-which is itself what Art. 9's "continuous risk management" expects.
+and evidenced. The honest residual gaps (age- and foreign-worker-fairness
+mitigation, and a production logging/monitoring layer) are named explicitly
+rather than hidden, which is itself what Art. 9's "continuous risk management"
+expects.

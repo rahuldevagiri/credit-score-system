@@ -61,3 +61,17 @@ def test_adversarial_main_writes_attack_artifacts():
     for art in ["adversarial_poisoning.csv", "adversarial_evasion.csv",
                 "adversarial_membership.csv", "adversarial_summary.png"]:
         assert (RESULTS / art).exists()
+
+
+@pytest.mark.integration
+def test_full_uci_main_writes_comparison_and_foreign_worker_audit():
+    import full_uci
+
+    full_uci.main()
+    metrics = pd.read_csv(RESULTS / "full_uci_metrics.csv")
+    assert set(metrics["Feature set"]) == {
+        "Full UCI (20 features)", "Kaggle subset (9 features)"}
+    fairness = pd.read_csv(RESULTS / "full_uci_fairness.csv")
+    # the full dataset unlocks the Foreign-worker fairness slice the subset lacks
+    assert "Foreign worker" in set(fairness["Attribute"])
+    assert (RESULTS / "full_uci_comparison.png").exists()

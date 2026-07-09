@@ -14,8 +14,9 @@ src/
   fairness_audit.py            group fairness metrics (Sex, Age) + threshold mitigation experiment
   explainability.py            SHAP global & local explanations, LR odds ratios
   adversarial.py               data-poisoning, evasion/gaming & membership-inference attack studies
+  full_uci.py                  full 20-feature UCI model + foreign-worker fairness audit
   viz_style.py                 shared chart palette/style
-tests/                         pytest suite (~99% coverage; enforced >=80% via pytest.ini)
+tests/                         pytest suite (38 tests, ~99% coverage; enforced >=80% via pytest.ini)
 models/                        fitted pipelines (joblib)
 results/                       metrics CSVs and presentation-ready charts
 REPORT.md                      full project report with results and interpretation
@@ -37,9 +38,10 @@ python src/train_baseline.py     # models + metrics + ROC/confusion charts
 python src/fairness_audit.py     # group fairness + mitigation experiment
 python src/explainability.py     # SHAP global/local + LR coefficients
 python src/adversarial.py        # poisoning / evasion / membership-inference
+python src/full_uci.py           # 20-feature model + foreign-worker fairness
 
 # Tests + coverage (Week-3 requirement):
-python -m pytest                 # 30 tests, ~99% coverage
+python -m pytest                 # 38 tests, 98.7% coverage
 ```
 
 ## Key results
@@ -52,3 +54,5 @@ python -m pytest                 # 30 tests, ~99% coverage
 - Adversarial: ~52% of rejected applicants flip to "approved" by halving the requested loan
   (evasion); poisoning degrades ROC-AUC as labels are corrupted; membership-inference attack
   AUC ≈ 0.58 (mild privacy leak).
+- Full UCI (20 features): raises ROC-AUC to 0.790 / recall to 0.73, and exposes a third bias
+  the subset cannot show — foreign workers approved at 59% vs 81% (disparate impact 0.73, fails).
