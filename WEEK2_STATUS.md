@@ -36,6 +36,11 @@ We audited the Random Forest on **5-fold out-of-fold predictions for all 1,000 a
 
 **Mitigation demonstrated:** group-specific decision thresholds on Sex (male 0.50, female 0.554) that equalize the wrongful-denial rate raised the disparate-impact ratio **0.83 → 0.98 at no accuracy cost** (0.70 → 0.71) and a small recall cost (0.70 → 0.66). This proves the measured bias is **actionable**, and that setting the threshold is a **documented policy decision owned by an accountable human**.
 
+### d) Extra: full 20-feature UCI dataset ("use additional information if you can find it")
+The Kaggle file is a 9-feature subset. We also decoded the **original UCI file** (`data/german.data`, 20 features) and re-ran the same Random Forest. Two payoffs:
+- **Better performance:** ROC-AUC **0.774 → 0.790**, recall **0.70 → 0.73** (the extra features — credit history, employment length — carry real signal).
+- **A third bias the subset structurally cannot show:** **foreign-worker status** fails the 80% rule (**DI 0.73** — approved 58.8% vs 81.1%). This is the audit's core lesson in one number: dropping a sensitive column would have *hidden* this disparity, not removed it.
+
 ---
 
 ## 2. Challenges
@@ -49,7 +54,7 @@ We audited the Random Forest on **5-fold out-of-fold predictions for all 1,000 a
 ## 3. Next steps (Week 3)
 - **XAI:** SHAP global + local explanations to understand *why* the model decides as it does (supports the GDPR right-to-explanation).
 - **Automated tests** with **≥80% code coverage** to detect regressions and weaknesses.
-- **Extend the fairness mitigation to Age bands** — the largest measured harm.
+- **Extend the fairness mitigation to Age bands and foreign-worker status** — the largest measured harms (the Sex technique is already demonstrated; extending it is mechanical).
 
 ---
 
