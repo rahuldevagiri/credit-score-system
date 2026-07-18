@@ -55,6 +55,27 @@ Cross-validated recall (LR 0.65 / DT 0.68 / RF 0.70, ±0.06–0.08) confirms the
 
 Artifacts: [roc_curves.png](results/roc_curves.png), [confusion_matrices.png](results/confusion_matrices.png), [baseline_metrics.csv](results/baseline_metrics.csv).
 
+### 4.1 Feature-engineering experiment — can more preprocessing raise performance?
+
+Before accepting the baseline, we tested whether engineering new features from the 9 Kaggle columns could improve the model, using 5-fold cross-validation on all 1,000 rows ([experiments/feature_engineering.py](experiments/feature_engineering.py)). Note these are cross-validated estimates, so the baseline reads slightly differently from the single hold-out split in §4.
+
+| Variant | Accuracy | Recall (bad) | ROC-AUC |
+|---|---|---|---|
+| RF baseline (current pipeline) | 0.701 | **0.697** | 0.759 |
+| RF + MonthlyPayment (Credit ÷ Duration) | 0.717 | 0.657 | **0.766** |
+| RF + Monthly + CreditPerAge | 0.719 | 0.657 | 0.764 |
+| RF + Monthly + DurationBin | 0.711 | 0.650 | 0.764 |
+| RF **without** class_weight (accuracy-max) | **0.742** | 0.303 | 0.760 |
+| Logistic Regression + engineered features | 0.636 | 0.623 | 0.677 |
+
+Three findings, each of which we treat as a deliberate design decision:
+
+1. **A `MonthlyPayment` feature (installment burden) is the only real gain** — about +1.6 points accuracy and +0.7 points AUC. But the improvement is marginal, within cross-validation noise, and comes with a recall drop at the fixed 0.5 threshold. Stacking further engineered features (`CreditPerAge`, `DurationBin`) adds essentially nothing.
+2. **The "accuracy-max" row is the accuracy trap made explicit.** Removing cost-sensitive weighting yields the *highest* accuracy in the table (0.742) while recall on bad credit **collapses to 0.30** — the model would miss 70% of risky applicants. This is direct, quantitative evidence for why we optimise recall, not accuracy.
+3. **The genuine performance lever is more features, not transformed features.** Engineering on the 9-column subset cannot beat the information ceiling; the real improvement came from adding the missing 11 features in the full UCI dataset (§5.1, AUC 0.774 → 0.790).
+
+**Decision:** we kept the simpler, more interpretable baseline pipeline. The marginal, recall-costing gain from `MonthlyPayment` did not justify the added complexity, and the full-UCI model already captures the meaningful headroom.
+
 ## 5. Fairness Audit
 
 ([src/fairness_audit.py](src/fairness_audit.py)) — computed on 5-fold **out-of-fold predictions for all 1,000 applicants** (larger, more stable group slices than the 200-row test set). Convention: predicted bad = credit denied.
