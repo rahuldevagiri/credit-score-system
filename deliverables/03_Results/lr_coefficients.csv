@@ -1,0 +1,20 @@
+Feature,Coefficient,Odds ratio (bad)
+Purpose=education,0.681,1.976
+Duration,0.666,1.946
+Purpose=repairs,0.395,1.485
+Checking account,0.391,1.478
+Housing=rent,0.203,1.225
+Sex=female,0.141,1.152
+Housing=free,0.115,1.122
+Purpose=domestic appliances,0.055,1.057
+Purpose=furniture/equipment,0.035,1.035
+Job,-0.014,0.986
+Purpose=car,-0.067,0.935
+Saving accounts,-0.088,0.916
+Age,-0.099,0.906
+Sex=male,-0.154,0.857
+Credit amount,-0.187,0.829
+Purpose=business,-0.203,0.816
+Purpose=vacation/others,-0.329,0.719
+Housing=own,-0.331,0.718
+Purpose=radio/TV,-0.58,0.56

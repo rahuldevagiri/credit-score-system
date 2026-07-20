@@ -39,7 +39,9 @@ def test_fairness_audit_main_writes_summary():
     summary = pd.read_csv(RESULTS / "fairness_summary.csv")
     assert set(summary["Attribute"]) == {"Sex", "Age band"}
     comparison = pd.read_csv(RESULTS / "mitigation_comparison.csv")
-    assert len(comparison) == 2  # baseline + mitigated
+    # baseline + mitigated, now for BOTH Sex and Age band
+    assert set(comparison["Attribute"]) == {"Sex", "Age band"}
+    assert len(comparison) == 4
 
 
 @pytest.mark.integration
@@ -75,3 +77,5 @@ def test_full_uci_main_writes_comparison_and_foreign_worker_audit():
     # the full dataset unlocks the Foreign-worker fairness slice the subset lacks
     assert "Foreign worker" in set(fairness["Attribute"])
     assert (RESULTS / "full_uci_comparison.png").exists()
+    mitig = pd.read_csv(RESULTS / "full_uci_mitigation.csv")
+    assert set(mitig["Attribute"]) == {"Age band", "Foreign worker"}

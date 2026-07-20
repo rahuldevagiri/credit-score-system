@@ -203,6 +203,20 @@ def main():
     print("\n=== Fairness summary (full UCI model) ===")
     print(summary.to_string(index=False))
 
+    # --- Mitigation: Age (clean) vs Foreign worker (trade-off) -------------
+    # Age: FPR-equalizing thresholds fix the disparate impact cleanly.
+    # Foreign worker: because ~96% of applicants ARE foreign workers, raising
+    # their threshold to cut wrongful denials also collapses overall recall —
+    # a documented trade-off requiring a policy decision, not an auto-fix.
+    from fairness_audit import mitigation_rows
+    mit = pd.DataFrame(
+        mitigation_rows(y, y_prob, tables["Age band"], age_band, "Age band", threshold=0.5)[0]
+        + mitigation_rows(y, y_prob, tables["Foreign worker"],
+                          audit["Foreign worker"], "Foreign worker", threshold=0.5)[0])
+    mit.to_csv(RESULTS_DIR / "full_uci_mitigation.csv", index=False)
+    print("\n=== Mitigation on the full model (Age = clean fix, Foreign worker = trade-off) ===")
+    print(mit.to_string(index=False))
+
     # --- Feature importances of the richer model ---------------------------
     names = [n.split("__", 1)[-1] for n in
              full_pipe.named_steps["prep"].get_feature_names_out()]

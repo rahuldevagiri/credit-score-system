@@ -1,0 +1,5 @@
+Attribute,Scenario,Demographic parity diff (approval),Disparate impact ratio (80% rule),Equal opportunity diff (TPR gap),Equalized odds diff (max TPR/FPR gap),Overall accuracy,Overall recall (bad)
+Age band,Baseline (0.5 threshold),0.276,0.575,0.2,0.269,0.716,0.7
+Age band,Mitigated (group thresholds),0.039,0.943,0.192,0.192,0.723,0.613
+Foreign worker,Baseline (0.5 threshold),0.223,0.725,0.203,0.203,0.716,0.7
+Foreign worker,Mitigated (group thresholds),0.099,0.882,0.257,0.257,0.745,0.503

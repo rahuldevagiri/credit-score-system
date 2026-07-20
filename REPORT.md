@@ -12,7 +12,7 @@ This project builds a credit-risk classification system on the German Credit Dat
 **Headline findings:**
 1. The model **fails the 80% disparate-impact rule for age** (ratio 0.56): applicants aged ≤25 are wrongly denied credit at 54.5%, more than double the rate of 26–60-year-olds (24.5%).
 2. Fairness by sex is borderline (disparate impact 0.83); creditworthy women are wrongly denied at 36.8% vs 26.9% for men.
-3. A simple **mitigation — group-specific decision thresholds — repaired the sex disparity almost completely** (disparate impact 0.83 → 0.98) at no accuracy cost, demonstrating that measured bias is actionable.
+3. A simple **mitigation — group-specific decision thresholds — repaired the sex and age disparities** (sex 0.83 → 0.98; age 0.56 → 0.86, halving the young-applicant wrongful-denial rate) at little accuracy cost. But the same fix applied to **foreign-worker status backfires** (recall collapses 0.70 → 0.50), because that group is 96% of the data — showing fairness mitigation is not always free and sometimes demands a policy decision, not an automatic rule.
 4. Bringing in the **full 20-feature UCI dataset** both raises performance (ROC-AUC 0.774 → 0.790) and exposes a **third bias the 9-feature subset cannot show**: foreign workers are approved at 59% vs 81% for non-foreign workers (disparate impact 0.73 — also a failure).
 5. SHAP explanations confirm the model reasons primarily from financial signals (checking account, duration, amount) but also uses Sex directly — motivating continuous fairness monitoring regardless of feature choices.
 
@@ -104,16 +104,18 @@ Three findings, each of which we treat as a deliberate design decision:
 
 **Interpretation.** The age disparity is the dominant fairness failure: a creditworthy applicant under 26 has a **55% chance of being wrongly denied** — the model has learned and amplified the historical penalty against young borrowers identified in the Week 1 EDA. The sex disparity is smaller but real, and concentrated in wrongful denials (FPR gap ~10 pts) rather than risk detection (TPR gap 3 pts) — i.e., the harm falls on creditworthy women.
 
-**Mitigation experiment.** Group-specific decision thresholds on Sex (male 0.50, female 0.554), chosen to equalize the wrongful-denial rate:
+**Mitigation.** We apply group-specific decision thresholds ([src/fairness_audit.py](src/fairness_audit.py) `equalize_fpr_thresholds`), chosen so each group's wrongful-denial rate (FPR) meets the lowest group's — targeting the *direct harm* to applicants. Applied to **both** Sex and Age band:
 
-| Scenario | Disparate impact | Equalized odds diff | Overall accuracy | Overall recall (bad) |
-|---|---|---|---|---|
-| Baseline (single 0.5 threshold) | 0.828 | 0.099 | 0.701 | 0.697 |
-| Mitigated (group thresholds) | **0.977** | **0.048** | 0.711 | 0.663 |
+| Attribute | Scenario | Disparate impact | Equalized odds diff | Accuracy | Recall (bad) |
+|---|---|---|---|---|---|
+| Sex | Baseline | 0.828 | 0.099 | 0.701 | 0.697 |
+| Sex | **Mitigated** | **0.977** | **0.048** | 0.711 | 0.663 |
+| Age band | Baseline | 0.562 | 0.300 | 0.701 | 0.697 |
+| Age band | **Mitigated** | **0.862** | 0.371 | 0.715 | 0.623 |
 
-The disparity is nearly eliminated at zero accuracy cost and a 3-point recall cost — demonstrating that detected bias is *correctable*, and that the correction is a business/policy decision that must be documented and owned by accountable humans. The same intervention applied to age bands is the first recommendation for future work.
+For **Sex**, the disparity is nearly eliminated at zero accuracy cost. For **Age**, the mitigation lifts the disparate-impact ratio **0.56 → 0.86 (now passing the 80% rule)** and roughly **halves the young-applicant wrongful-denial rate (54.5% → 24.5%)**, at a ~7-point recall cost. One honest caveat: on this 9-feature model the age equalized-odds *gap widens slightly* (0.30 → 0.37), because the tiny >60 group (n=45) is statistically unstable — an artefact the richer 20-feature model does not share (§5.2). The correction is a documented business/policy decision owned by accountable humans, not an automatic rule.
 
-Artifacts: [fairness_group_metrics.png](results/fairness_group_metrics.png), [fairness_approval_rates.png](results/fairness_approval_rates.png), CSV tables in `results/`.
+Artifacts: [fairness_group_metrics.png](results/fairness_group_metrics.png), [fairness_approval_rates.png](results/fairness_approval_rates.png), [mitigation_comparison.csv](results/mitigation_comparison.csv).
 
 ### 5.1 Extended model — the full 20-feature UCI dataset
 
@@ -133,6 +135,21 @@ More consequentially, the full data unlocks a fairness slice **the subset struct
 
 Foreign workers are approved at 58.8% versus 81.1% for non-foreign workers — **disparate impact 0.73, a fresh failure of the 80% rule**. Because ~96% of applicants are foreign workers, the *advantaged* group is a fragile 37-person minority. The lesson reinforces the audit's core thesis: had we simply dropped the sensitive column, this disparity would have been hidden, not removed. Top drivers of the richer model (checking status 0.18, duration 0.10, credit amount 0.10, age 0.07, employment length 0.06, credit history 0.04) confirm the added features carry genuine signal. Artifact: [full_uci_comparison.png](results/full_uci_comparison.png), [full_uci_fairness.csv](results/full_uci_fairness.csv).
 
+### 5.2 Mitigation on the full model — and where it breaks
+
+We applied the same FPR-equalizing threshold mitigation to the 20-feature model, for both Age and Foreign worker ([full_uci_mitigation.csv](results/full_uci_mitigation.csv)):
+
+| Attribute | Scenario | Disparate impact | Equalized odds diff | Accuracy | Recall (bad) |
+|---|---|---|---|---|---|
+| Age band | Baseline | 0.575 | 0.269 | 0.716 | 0.700 |
+| Age band | **Mitigated** | **0.943** | **0.192** | 0.723 | 0.613 |
+| Foreign worker | Baseline | 0.725 | 0.203 | 0.716 | 0.700 |
+| Foreign worker | **Mitigated** | **0.882** | 0.257 | 0.745 | **0.503** |
+
+**Age is a clean win** on the richer model — disparate impact 0.58 → 0.94 *and* equalized odds *improves* (0.27 → 0.19), at a ~9-point recall cost. The larger feature set stabilises the estimate that the 9-feature model could not.
+
+**Foreign worker is a genuine trade-off, not a free fix.** The threshold adjustment does lift disparate impact (0.73 → 0.88), but because foreign workers are ~96% of all applicants, raising their threshold to cut wrongful denials also makes the model miss far more bad loans — **overall recall collapses from 0.70 to 0.50**, and the equalized-odds gap actually widens. This is the most important nuance in the whole audit: *fairness mitigation is not always free.* When the disadvantaged reference group is a fragile 4% minority, a naive threshold fix trades away the model's core purpose. The responsible response is to treat foreign-worker fairness as a **policy decision** — a partial adjustment, a reweighing / in-processing method, or a governance sign-off — rather than an automatic threshold. We surface the trade-off explicitly rather than reporting a headline "fixed."
+
 ## 6. Explainability
 
 ([src/explainability.py](src/explainability.py)) — SHAP TreeExplainer on the Random Forest.
@@ -151,8 +168,8 @@ Foreign workers are approved at 58.8% versus 81.1% for non-foreign workers — *
 
 ## 8. Limitations & Future Work
 
-1. **Age & foreign-worker mitigation:** apply and document group-threshold (or reweighing/in-processing) mitigation for age bands *and* foreign-worker status — the two largest measured harms. The technique is already demonstrated on Sex (§5); extending it is mechanical.
-2. **Small subgroups:** >60 (n=45) and non-foreign workers (n=37) estimates are fragile; report confidence intervals.
+1. **Foreign-worker mitigation:** threshold equalization improves disparate impact but at an unacceptable recall cost (§5.2), because the disadvantaged group is a 4% minority. This needs a *policy* approach — partial adjustment, reweighing/in-processing, or governance sign-off — which is the top remaining fairness task. (Sex and Age mitigation are implemented, §5–5.2.)
+2. **Small subgroups:** >60 (n=45) and non-foreign workers (n=37) estimates are fragile — visible in the age equalized-odds wobble on the 9-feature model; report confidence intervals.
 3. **Intersectionality:** audit joint groups (young women, young foreign workers, etc.), where disparities often compound.
 4. **Threshold as policy:** formalize the 5:1 cost matrix into an explicit, documented decision-threshold policy.
 5. **Productionisation:** implement event logging (AI Act Art. 12) and post-market monitoring (Art. 72) for distribution shift.
@@ -165,7 +182,7 @@ python src/train_baseline.py     # models + metrics + ROC/confusion charts
 python src/fairness_audit.py     # group fairness + mitigation experiment
 python src/explainability.py     # SHAP global/local + LR coefficients
 python src/full_uci.py           # 20-feature model + foreign-worker fairness
-python -m pytest                 # 38 tests, 98.7% coverage (enforced ≥80%)
+python -m pytest                 # 43 tests, 98.9% coverage (enforced ≥80%)
 ```
 
 All outputs land in `results/`; fitted pipelines in `models/`. `requirements.txt` pins exact library versions so a clean install reproduces the exact figures quoted in this report — the whole analysis also runs end-to-end in [Responsible_AI_Credit_Scoring.ipynb](Responsible_AI_Credit_Scoring.ipynb) via *Restart & Run All*.

@@ -95,6 +95,29 @@ def equalize_fpr_thresholds(y_true, y_prob, groups, target_fpr) -> pd.Series:
     return pd.Series(thresholds)
 
 
+def mitigation_rows(y, y_prob, base_table, groups, label, threshold=THRESHOLD):
+    """Baseline vs FPR-equalized-threshold mitigation for one protected attribute.
+
+    Returns (list of two comparison-row dicts, per-group threshold Series).
+    The mitigation raises each group's threshold so its wrongful-denial rate
+    (FPR) meets the lowest group's — the direct harm-equalizing target.
+    """
+    y_base = (y_prob >= threshold).astype(int)
+    thr = equalize_fpr_thresholds(y, y_prob, groups, base_table["FPR (good denied)"].min())
+    y_mit = (y_prob >= groups.map(thr).to_numpy()).astype(int)
+    mit_table = group_metrics(y, y_mit, groups)
+
+    def _row(scenario, table, yhat):
+        row = {"Attribute": label, "Scenario": scenario}
+        row.update({k: v for k, v in summarize(table, label).items() if k != "Attribute"})
+        row["Overall accuracy"] = round(accuracy_score(y, yhat), 3)
+        row["Overall recall (bad)"] = round(recall_score(y, yhat), 3)
+        return row
+
+    return [_row("Baseline (0.5 threshold)", base_table, y_base),
+            _row("Mitigated (group thresholds)", mit_table, y_mit)], thr
+
+
 def main():
     apply_style()
     RESULTS_DIR.mkdir(exist_ok=True)
@@ -128,26 +151,14 @@ def main():
     print("\n=== Fairness summary ===")
     print(summary.to_string(index=False))
 
-    # --- Mitigation: group thresholds on Sex to equalize FPR -------------
-    base_fpr = by_sex.set_index("Group")["FPR (good denied)"]
-    target = base_fpr.min()
-    thr = equalize_fpr_thresholds(y, y_prob, sex, target)
-    y_pred_mit = (y_prob >= sex.map(thr).to_numpy()).astype(int)
-    by_sex_mit = group_metrics(y, y_pred_mit, sex)
-
-    comparison = pd.DataFrame([
-        {"Scenario": "Baseline (0.5 threshold)",
-         **summarize(by_sex, "Sex"),
-         "Overall accuracy": round(accuracy_score(y, y_pred), 3),
-         "Overall recall (bad)": round(recall_score(y, y_pred), 3)},
-        {"Scenario": "Mitigated (group thresholds, FPR equalized)",
-         **summarize(by_sex_mit, "Sex"),
-         "Overall accuracy": round(accuracy_score(y, y_pred_mit), 3),
-         "Overall recall (bad)": round(recall_score(y, y_pred_mit), 3)},
-    ]).drop(columns=["Attribute"])
+    # --- Mitigation: FPR-equalizing group thresholds for Sex AND Age -----
+    rows_sex, thr_sex = mitigation_rows(y, y_prob, by_sex, sex, "Sex")
+    rows_age, thr_age = mitigation_rows(y, y_prob, by_age, age_band, "Age band")
+    comparison = pd.DataFrame(rows_sex + rows_age)
     comparison.to_csv(RESULTS_DIR / "mitigation_comparison.csv", index=False)
-    print("\n=== Mitigation experiment (Sex) ===")
-    print(f"Group thresholds: { {k: round(v, 3) for k, v in thr.items()} }")
+    print("\n=== Mitigation experiment (Sex & Age band) ===")
+    print(f"Sex thresholds: { {k: round(v, 3) for k, v in thr_sex.items()} }")
+    print(f"Age thresholds: { {k: round(v, 3) for k, v in thr_age.items()} }")
     print(comparison.to_string(index=False))
 
     # --- Charts ----------------------------------------------------------
