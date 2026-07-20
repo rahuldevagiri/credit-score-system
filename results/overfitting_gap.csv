@@ -1,0 +1,4 @@
+Model,Train AUC,CV AUC,CV std,Gap
+Logistic Regression,0.714,0.677,0.045,0.037
+Decision Tree,0.8,0.698,0.034,0.102
+Random Forest,0.826,0.759,0.036,0.067

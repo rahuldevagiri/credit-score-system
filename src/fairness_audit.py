@@ -126,7 +126,7 @@ def main():
     pipe = Pipeline([
         ("prep", build_preprocessor()),
         ("model", RandomForestClassifier(
-            n_estimators=300, min_samples_leaf=5,
+            n_estimators=300, min_samples_leaf=20,
             class_weight="balanced", random_state=RANDOM_STATE)),
     ])
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)

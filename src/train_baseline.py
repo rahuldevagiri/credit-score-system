@@ -55,7 +55,7 @@ MODELS = {
         max_depth=5, min_samples_leaf=20, class_weight="balanced", random_state=RANDOM_STATE
     ),
     "Random Forest": RandomForestClassifier(
-        n_estimators=300, min_samples_leaf=5, class_weight="balanced", random_state=RANDOM_STATE
+        n_estimators=300, min_samples_leaf=20, class_weight="balanced", random_state=RANDOM_STATE
     ),
 }
 

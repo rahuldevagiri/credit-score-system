@@ -137,7 +137,7 @@ def make_full_rf() -> Pipeline:
     return Pipeline([
         ("prep", build_full_preprocessor()),
         ("model", RandomForestClassifier(
-            n_estimators=300, min_samples_leaf=5,
+            n_estimators=300, min_samples_leaf=20,
             class_weight="balanced", random_state=RANDOM_STATE)),
     ])
 

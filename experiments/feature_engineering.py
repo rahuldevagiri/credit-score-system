@@ -73,7 +73,7 @@ def run(name, X, y, prep, model):
 
 
 def rf(balanced=True):
-    return RandomForestClassifier(n_estimators=300, min_samples_leaf=5,
+    return RandomForestClassifier(n_estimators=300, min_samples_leaf=20,
                                   class_weight="balanced" if balanced else None,
                                   random_state=42)
 

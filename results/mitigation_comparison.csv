@@ -1,5 +1,5 @@
 Attribute,Scenario,Demographic parity diff (approval),Disparate impact ratio (80% rule),Equal opportunity diff (TPR gap),Equalized odds diff (max TPR/FPR gap),Overall accuracy,Overall recall (bad)
-Sex,Baseline (0.5 threshold),0.106,0.828,0.03,0.099,0.701,0.697
-Sex,Mitigated (group thresholds),0.014,0.977,0.048,0.048,0.711,0.663
-Age band,Baseline (0.5 threshold),0.279,0.562,0.275,0.3,0.701,0.697
-Age band,Mitigated (group thresholds),0.101,0.862,0.371,0.371,0.715,0.623
+Sex,Baseline (0.5 threshold),0.117,0.795,0.056,0.102,0.688,0.753
+Sex,Mitigated (group thresholds),0.024,0.958,0.027,0.027,0.699,0.723
+Age band,Baseline (0.5 threshold),0.298,0.497,0.163,0.301,0.688,0.753
+Age band,Mitigated (group thresholds),0.127,0.821,0.414,0.414,0.697,0.667

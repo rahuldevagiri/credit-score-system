@@ -58,7 +58,7 @@ def make_rf_pipeline() -> Pipeline:
     return Pipeline([
         ("prep", build_preprocessor()),
         ("model", RandomForestClassifier(
-            n_estimators=300, min_samples_leaf=5,
+            n_estimators=300, min_samples_leaf=20,
             class_weight="balanced", random_state=RANDOM_STATE)),
     ])
 
