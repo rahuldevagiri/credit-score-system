@@ -1,0 +1,2 @@
+Mean confidence (train/members),Mean confidence (test/non-members),Confidence gap,Membership-inference attack AUC
+0.656,0.599,0.057,0.59

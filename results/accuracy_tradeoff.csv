@@ -1,0 +1,3 @@
+Model,Accuracy,Recall (bad) — bad loans caught
+Accuracy-optimised (no cost weighting),0.74,0.183
+Cost-sensitive (balanced) — our model,0.69,0.75
