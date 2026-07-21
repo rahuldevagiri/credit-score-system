@@ -14,9 +14,9 @@ We trained **three models across the interpretability → performance spectrum**
 |---|---|---|---|---|---|
 | Logistic Regression | 0.645 | 0.432 | 0.583 | 0.496 | 0.664 |
 | Decision Tree (depth 5) | 0.620 | 0.425 | **0.750** | 0.542 | 0.695 |
-| **Random Forest (300 trees)** | **0.695** | **0.494** | 0.700 | **0.579** | **0.774** |
+| **Random Forest (300 trees)** | **0.690** | **0.489** | 0.750 | **0.592** | **0.770** |
 
-Cross-validated recall (LR 0.65 / DT 0.68 / RF 0.70, ±0.06–0.08) confirms the ranking is stable. **We selected Random Forest** (best AUC + F1, near-best recall) as the model to audit.
+Cross-validated recall (LR 0.65 / DT 0.68 / RF 0.75, ±0.04–0.08) confirms the ranking is stable. **We selected Random Forest** (best AUC + F1, near-best recall) as the model to audit.
 
 ### b) Risk analysis
 The dataset is **70% good / 30% bad**, and the dataset's own cost matrix says approving a bad loan costs a lender **~5× more** than rejecting a good one. Two consequences drive every choice we made:
@@ -28,18 +28,18 @@ We audited the Random Forest on **5-fold out-of-fold predictions for all 1,000 a
 
 | Attribute | Disparate impact (80% rule) | Equal-opportunity gap (TPR) | Equalized-odds gap |
 |---|---|---|---|
-| Sex | 0.83 — **borderline** | 0.03 | 0.10 |
-| Age band | **0.56 — FAILS** | 0.28 | 0.30 |
+| Sex | 0.80 — **borderline** | 0.06 | 0.10 |
+| Age band | **0.50 — FAILS** | 0.16 | 0.30 |
 
-- **Age is the dominant failure:** a creditworthy applicant **under 26 is wrongly denied 54.5%** of the time vs 24.5% for ages 26–60 — the model learned and amplified a historical young-borrower penalty.
-- **Sex** harm is smaller and falls on **wrongful denials of creditworthy women** (FPR 36.8% vs 26.9% for men), not on risk detection.
+- **Age is the dominant failure:** a creditworthy applicant **under 26 is wrongly denied 59%** of the time vs 29% for ages 26–60 — the model learned and amplified a historical young-borrower penalty.
+- **Sex** harm is smaller and falls on **wrongful denials of creditworthy women** (FPR 41.3% vs 31.1% for men), not on risk detection.
 
-**Mitigation demonstrated:** group-specific decision thresholds on Sex (male 0.50, female 0.554) that equalize the wrongful-denial rate raised the disparate-impact ratio **0.83 → 0.98 at no accuracy cost** (0.70 → 0.71) and a small recall cost (0.70 → 0.66). This proves the measured bias is **actionable**, and that setting the threshold is a **documented policy decision owned by an accountable human**.
+**Mitigation demonstrated:** group-specific decision thresholds on Sex (male 0.50, female 0.554) that equalize the wrongful-denial rate raised the disparate-impact ratio **0.80 → 0.96 at no accuracy cost** (0.69 → 0.70) and a small recall cost (0.75 → 0.72). This proves the measured bias is **actionable**, and that setting the threshold is a **documented policy decision owned by an accountable human**.
 
 ### d) Extra: full 20-feature UCI dataset ("use additional information if you can find it")
 The Kaggle file is a 9-feature subset. We also decoded the **original UCI file** (`data/german.data`, 20 features) and re-ran the same Random Forest. Two payoffs:
-- **Better performance:** ROC-AUC **0.774 → 0.790**, recall **0.70 → 0.73** (the extra features — credit history, employment length — carry real signal).
-- **A third bias the subset structurally cannot show:** **foreign-worker status** fails the 80% rule (**DI 0.73** — approved 58.8% vs 81.1%). This is the audit's core lesson in one number: dropping a sensitive column would have *hidden* this disparity, not removed it.
+- **Better performance:** ROC-AUC **0.770 → 0.783**, recall **0.75 → 0.78** (the extra features — credit history, employment length — carry real signal).
+- **A third bias the subset structurally cannot show:** **foreign-worker status** fails the 80% rule (**DI 0.71** — approved ~54% vs ~76%). This is the audit's core lesson in one number: dropping a sensitive column would have *hidden* this disparity, not removed it.
 
 ---
 

@@ -59,17 +59,17 @@ mitigation. This is exactly what the fairness audit does:
   gap computed by Sex and Age band ([src/fairness_audit.py](src/fairness_audit.py)),
   and — on the full 20-feature UCI data — by **foreign-worker status**
   ([src/full_uci.py](src/full_uci.py)).
-- **Finding:** the model **fails the 80% rule for age** (ratio 0.56) and for
-  **foreign-worker status** (0.73), and is borderline for sex (0.83). The
+- **Finding:** the model **fails the 80% rule for age** (ratio 0.50) and for
+  **foreign-worker status** (0.71), and is borderline for sex (0.80). The
   foreign-worker disparity is a direct anti-discrimination concern (a proxy for
   nationality/origin) that the 9-feature subset structurally cannot even surface
   — evidence that data governance and feature scope are themselves bias controls.
 - **Mitigation:** group-specific thresholds repair the sex disparity
-  (0.83 → 0.98) and the age disparity (0.56 → 0.86, halving the young-applicant
+  (0.80 → 0.96) and the age disparity (0.50 → 0.82, halving the young-applicant
   wrongful-denial rate) — documented, owned decisions, exactly the "examination
   and mitigation of biases" the Article demands. For **foreign worker** the same
-  technique lifts disparate impact (0.73 → 0.88) but collapses recall (0.70 →
-  0.50) because that group is 96% of applicants; we therefore document it as a
+  technique lifts disparate impact (0.71 → 0.93) but collapses recall (0.76 →
+  0.47) because that group is 96% of applicants; we therefore document it as a
   trade-off requiring a policy/reweighing decision rather than an automatic fix —
   itself an example of the Article's expectation that mitigation be *appropriate*,
   not merely applied.
@@ -98,7 +98,7 @@ high-risk, not prohibited.
 | **Art. 22** — automated individual decision-making | A person has the right not to be subject to a *solely* automated decision with legal/significant effect, and to obtain human intervention and an explanation | We deliberately keep a **human in the loop**, so the decision is not "solely automated". The SHAP local explanations ([shap_local_denied.png](results/shap_local_denied.png)) provide the "meaningful information about the logic" (Arts. 13–15) for an adverse-action notice |
 | **Arts. 5 & 6** — lawfulness, purpose limitation, minimisation | Process only data needed for the stated purpose | Feature set is limited to credit-relevant attributes; sensitive attributes are *audited* rather than blindly used |
 | **Art. 9** — special-category data | Extra protection for sensitive data | We use Sex and Age (not Art. 9 special categories as such), but treat them as **protected attributes** for fairness monitoring. We explicitly show that *dropping* them does **not** remove bias (proxies remain) — so "fairness through unawareness" is rejected on evidence |
-| **Art. 25** — data protection by design & default | Bake in privacy | Missing account data is encoded as a category rather than harvesting more data; **membership-inference risk is measured** (attack AUC ≈ 0.58, mild) so privacy leakage is quantified, not assumed away |
+| **Art. 25** — data protection by design & default | Bake in privacy | Missing account data is encoded as a category rather than harvesting more data; **membership-inference risk is measured** (attack AUC ≈ 0.53, mild) so privacy leakage is quantified, not assumed away |
 | **Art. 35** — Data Protection Impact Assessment | High-risk processing needs a DPIA | This document + the model card + fairness audit constitute the substance a DPIA would require |
 
 **Right to explanation, concretely.** GDPR's "logic involved" requirement is
@@ -143,9 +143,9 @@ our fairness audit and human-oversight design already align with.
 | Transparency / explainability | ✅ Done | explainability.py, SHAP artifacts |
 | Human oversight design | ✅ Done | MODEL_CARD "Intended Use" |
 | Accuracy, robustness & security | ✅ Done | adversarial.py, test suite (43 tests, 98.9% cov) |
-| Fairness — sex | ✅ Mitigated | mitigation_comparison.csv (DI 0.83 → 0.98) |
-| Fairness — age | ✅ Mitigated | mitigation_comparison.csv (DI 0.56 → 0.86); young-denial rate halved |
-| Fairness — foreign worker | ⚠️ **Trade-off documented** | full_uci_mitigation.csv: threshold fix lifts DI 0.73 → 0.88 but recall collapses 0.70 → 0.50 (96% majority) → needs a policy/reweighing approach |
+| Fairness — sex | ✅ Mitigated | mitigation_comparison.csv (DI 0.80 → 0.96) |
+| Fairness — age | ✅ Mitigated | mitigation_comparison.csv (DI 0.50 → 0.82); young-denial rate halved |
+| Fairness — foreign worker | ⚠️ **Trade-off documented** | full_uci_mitigation.csv: threshold fix lifts DI 0.71 → 0.93 but recall collapses 0.76 → 0.47 (96% majority) → needs a policy/reweighing approach |
 | Automatic event logging (Art. 12) | ⚠️ **Design-only** | logging hook not implemented |
 | Post-market monitoring (Art. 72) | ⚠️ **Future** | needs a deployment to monitor |
 | Conformity assessment / CE marking | ➖ N/A for a student project | would precede real deployment |

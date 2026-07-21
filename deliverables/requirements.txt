@@ -1,0 +1,23 @@
+# Exact pins — the notebook's results must reproduce the numbers quoted in the
+# report/model card on a clean install (professor requirement: all results
+# runnable, and consistent, in the notebook). Captured on Python 3.14.
+#
+# Core ML / data stack
+numpy==2.4.6
+pandas==3.0.4
+scikit-learn==1.9.0
+matplotlib==3.11.0
+shap==0.52.0
+joblib==1.5.3
+
+# Testing & coverage (Week-3 requirement: >=80% coverage)
+pytest==9.1.1
+pytest-cov==7.1.0
+
+# Notebook (the presentation deliverable)
+nbformat>=5.10
+nbconvert>=7.16
+ipykernel>=6.29
+
+# Local decision-support app
+streamlit>=1.40

@@ -48,13 +48,13 @@ python -m pytest                 # 43 tests, 98.9% coverage
 
 ## Key results
 
-- Random Forest: ROC-AUC 0.774, bad-credit recall 0.70 (primary metric — cost-sensitive).
-- Fairness: age disparate impact 0.56 (fails 80% rule — young applicants wrongly denied at 54.5%);
-  sex disparity 0.83, repaired to 0.98 by group-specific thresholds at no accuracy cost.
+- Random Forest: ROC-AUC 0.770, bad-credit recall 0.75 (primary metric — cost-sensitive).
+- Fairness: age disparate impact 0.50 (fails 80% rule — young applicants wrongly denied at 59%);
+  sex disparity 0.80, repaired to 0.96 by group-specific thresholds at no accuracy cost.
 - SHAP: checking account, duration, and credit amount dominate; sensitive attributes have
   small but non-zero direct influence — see [REPORT.md](REPORT.md) and [MODEL_CARD.md](MODEL_CARD.md).
-- Adversarial: ~52% of rejected applicants flip to "approved" by halving the requested loan
+- Adversarial: ~41% of rejected applicants flip to "approved" by halving the requested loan
   (evasion); poisoning degrades ROC-AUC as labels are corrupted; membership-inference attack
-  AUC ≈ 0.58 (mild privacy leak).
-- Full UCI (20 features): raises ROC-AUC to 0.790 / recall to 0.73, and exposes a third bias
-  the subset cannot show — foreign workers approved at 59% vs 81% (disparate impact 0.73, fails).
+  AUC ≈ 0.53 (mild privacy leak).
+- Full UCI (20 features): raises ROC-AUC to 0.783 / recall to 0.78, and exposes a third bias
+  the subset cannot show — foreign workers approved at ~54% vs ~76% (disparate impact 0.71, fails).

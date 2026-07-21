@@ -30,14 +30,14 @@
 
 ## 1. Executive Summary
 
-This project builds a credit-risk classification system on the German Credit dataset (1,000 applicants) and subjects it to a complete Responsible-AI evaluation: fairness auditing, bias mitigation, explainability, adversarial testing, and a regulatory analysis mapped to the EU AI Act and GDPR. A Random Forest (ROC-AUC 0.774 on the 9-feature subset, 0.790 on the full 20-feature dataset) is the audited model.
+This project builds a credit-risk classification system on the German Credit dataset (1,000 applicants) and subjects it to a complete Responsible-AI evaluation: fairness auditing, bias mitigation, explainability, adversarial testing, and a regulatory analysis mapped to the EU AI Act and GDPR. A Random Forest (ROC-AUC 0.770 on the 9-feature subset, 0.783 on the full 20-feature dataset) is the audited model.
 
 **Headline findings:**
 
-1. **Accuracy is the wrong metric.** With a 70/30 class balance and a 5:1 misclassification-cost asymmetry, the model is deliberately optimised for **recall on bad credit**, not accuracy. Removing cost-sensitive weighting raises accuracy to 0.74 but collapses recall to 0.30 — a quantified proof that the "most accurate" model is the worst lender.
-2. **The model fails the 80% fairness rule on two protected attributes:** age (disparate impact 0.56) and — visible only in the full dataset — foreign-worker status (0.73).
-3. **Bias mitigation works for sex and age.** Group-specific decision thresholds repair sex (0.83 → 0.98) and age (0.56 → 0.86), roughly halving the wrongful-denial rate for applicants under 26 (54.5% → 24.5%), at a modest recall cost.
-4. **Fairness mitigation is not always free.** The same technique on foreign-worker status improves the fairness metric (0.73 → 0.88) but collapses overall recall (0.70 → 0.50), because that group is 96% of applicants. This is documented as a *policy* decision, not an automatic fix — arguably the project's most important insight.
+1. **Accuracy is the wrong metric.** With a 70/30 class balance and a 5:1 misclassification-cost asymmetry, the model is deliberately optimised for **recall on bad credit**, not accuracy. Removing cost-sensitive weighting raises accuracy to 0.72 but collapses recall to 0.15 — a quantified proof that the "most accurate" model is the worst lender.
+2. **The model fails the 80% fairness rule on two protected attributes:** age (disparate impact 0.50) and — visible only in the full dataset — foreign-worker status (0.71).
+3. **Bias mitigation works for sex and age.** Group-specific decision thresholds repair sex (0.80 → 0.96) and age (0.50 → 0.82), roughly halving the wrongful-denial rate for applicants under 26 (59% → 29%), at a modest recall cost.
+4. **Fairness mitigation is not always free.** The same technique on foreign-worker status improves the fairness metric (0.71 → 0.93) but collapses overall recall (0.76 → 0.47), because that group is 96% of applicants. This is documented as a *policy* decision, not an automatic fix — arguably the project's most important insight.
 5. **The system is explainable, tested, and threat-modelled:** SHAP global/local explanations, a 38-test suite at 98.9% coverage, and three adversarial studies (poisoning, evasion, membership inference).
 
 The system is designed as **human-in-the-loop decision support**, consistent with the EU AI Act (credit scoring = high-risk) and GDPR Art. 22.
@@ -93,13 +93,13 @@ Credit scoring is a **named high-risk use case** under the EU AI Act (Annex III(
 |---|---|---|---|---|---|
 | Logistic Regression | 0.645 | 0.432 | 0.583 | 0.496 | 0.664 |
 | Decision Tree | 0.620 | 0.425 | **0.750** | 0.542 | 0.695 |
-| Random Forest | **0.695** | **0.494** | 0.700 | **0.579** | **0.774** |
+| Random Forest | **0.690** | **0.489** | 0.750 | **0.592** | **0.770** |
 
-Cross-validated recall (LR 0.65 / DT 0.68 / RF 0.70, ±0.06–0.08) confirms the ranking is stable. Accuracy sits below the naive 70% "approve everyone" baseline *by design*.
+Cross-validated recall (LR 0.65 / DT 0.68 / RF 0.75, ±0.04–0.08) confirms the ranking is stable. Accuracy sits below the naive 70% "approve everyone" baseline *by design*.
 
-**Extended model — full 20-feature UCI dataset:** the same Random Forest improves to Accuracy 0.705, Recall 0.733, ROC-AUC 0.790 — credit history and employment length carry genuine signal the subset discards.
+**Extended model — full 20-feature UCI dataset:** the same Random Forest improves to Accuracy 0.695, Recall 0.783, ROC-AUC 0.783 — credit history and employment length carry genuine signal the subset discards.
 
-**Feature-engineering experiment:** engineering new features (e.g. monthly payment burden) yields only marginal gains (+0.7 AUC) within CV noise, at a recall cost. Removing `class_weight` gives the highest accuracy (0.742) but recall collapses to 0.303 — the accuracy trap, quantified. The genuine performance lever is *more features* (full UCI), not transformed features.
+**Feature-engineering experiment:** engineering new features (e.g. monthly payment burden) yields only marginal gains (+0.7 AUC) within CV noise, at a recall cost. Removing `class_weight` gives the highest accuracy (0.723) but recall collapses to 0.153 — the accuracy trap, quantified. The genuine performance lever is *more features* (full UCI), not transformed features.
 
 ---
 
@@ -111,20 +111,20 @@ Computed on 5-fold **out-of-fold predictions across all 1,000 applicants**. Conv
 
 | Attribute | Disparate impact | Verdict |
 |---|---|---|
-| Sex | 0.83 | borderline |
+| Sex | 0.80 | borderline |
 | Age band | **0.56** | **fail** |
 | Foreign worker (full UCI) | **0.73** | **fail** |
 
-Applicants under 26 face a 54.5% wrongful-denial rate (vs 24.5% for ages 26–60); foreign workers are approved at 58.8% vs 81.1% for non-foreign workers.
+Applicants under 26 face a 59% wrongful-denial rate (vs 29% for ages 26–60); foreign workers are approved at ~54% vs ~76% for non-foreign workers.
 
 **Mitigation** — group-specific FPR-equalizing thresholds:
 
 | Attribute | Model | Disparate impact | Overall recall | Verdict |
 |---|---|---|---|---|
-| Sex | 9-feature | 0.83 → **0.98** | 0.70 → 0.66 | ✅ clean |
-| Age band | 9-feature | 0.56 → **0.86** | 0.70 → 0.62 | ✅ passes; young-denial halved |
-| Age band | 20-feature | 0.58 → **0.94** | 0.70 → 0.61 | ✅ clean (eq-odds also improves) |
-| Foreign worker | 20-feature | 0.73 → **0.88** | **0.70 → 0.50** | ⚠️ trade-off |
+| Sex | 9-feature | 0.80 → **0.96** | 0.75 → 0.72 | ✅ clean |
+| Age band | 9-feature | 0.50 → **0.82** | 0.75 → 0.67 | ✅ passes; young-denial halved |
+| Age band | 20-feature | 0.54 → **0.92** | 0.76 → 0.68 | ✅ clean (eq-odds also improves) |
+| Foreign worker | 20-feature | 0.71 → **0.93** | **0.76 → 0.47** | ⚠️ trade-off |
 
 **The critical insight.** For sex and age, mitigation is a clean win. For foreign worker it backfires: because that group is ~96% of applicants, raising their threshold to cut wrongful denials makes the model miss half of *all* bad loans. **Fairness mitigation is not always free.** When the disadvantaged reference group is a fragile minority (n=37), a naive threshold fix trades away the model's core purpose. The responsible response is to treat foreign-worker fairness as a documented **policy decision** (partial adjustment, reweighing/in-processing, or governance sign-off), not an automatic rule.
 
@@ -134,7 +134,7 @@ Applicants under 26 face a 54.5% wrongful-denial rate (vs 24.5% for ages 26–60
 
 SHAP TreeExplainer on the Random Forest.
 
-- **Global drivers (mean |SHAP| toward P(bad)):** Checking account **0.120**, Duration 0.068, Savings 0.035, Credit amount 0.032, Housing=own 0.023, Age 0.021, Sex 0.012. The model reasons primarily from financial capacity — but the non-zero Age/Sex attributions justify the fairness audit.
+- **Global drivers (mean |SHAP| toward P(bad)):** Checking account **0.106**, Duration 0.052, Savings 0.023, Credit amount 0.023, Housing=own 0.017, Age 0.015. The model reasons primarily from financial capacity — but the non-zero Age attribution justifies the fairness audit.
 - **Local explanations:** per-applicant SHAP waterfalls give a contestable reason ("denied because of low account balances and a 24-month term") — the GDPR Art. 22 right-to-explanation made concrete.
 - **Transparent reference:** Logistic Regression odds ratios (e.g. education-purpose loans nearly double the odds of bad credit; each standardised unit of duration OR 1.95).
 
@@ -144,9 +144,9 @@ SHAP TreeExplainer on the Random Forest.
 
 Three attack studies (`adversarial.py`), because a high-risk system's threat model is part of its risk assessment (AI Act Art. 15):
 
-1. **Evasion / gaming:** ~52% of rejected applicants flip to "approved" by halving the requested loan size/term — a real gaming risk.
-2. **Data poisoning:** corrupting training labels degrades ranking quality (ROC-AUC 0.79 → 0.71 as 0–30% of labels are flipped).
-3. **Membership inference (privacy):** attack AUC ≈ 0.58 — a mild, quantified leak (confidence gap 0.055), addressing GDPR data-protection-by-design (Art. 25).
+1. **Evasion / gaming:** ~41% of rejected applicants flip to "approved" by halving the requested loan size/term — a real gaming risk.
+2. **Data poisoning:** corrupting training labels degrades ranking quality (ROC-AUC 0.77 → 0.75 as 0–30% of labels are flipped).
+3. **Membership inference (privacy):** attack AUC ≈ 0.53 — a mild, quantified leak (confidence gap 0.055), addressing GDPR data-protection-by-design (Art. 25).
 
 ---
 
@@ -155,8 +155,8 @@ Three attack studies (`adversarial.py`), because a high-risk system's threat mod
 | Risk | Type | Treatment |
 |---|---|---|
 | Age discrimination | Fairness / legal | Detected (DI 0.56) → **mitigated** (0.86), young-denial halved |
-| Sex discrimination | Fairness / legal | **Mitigated** via group thresholds (0.83 → 0.98) |
-| Foreign-worker discrimination | Fairness / legal | Detected (DI 0.73); mitigation is a documented trade-off → policy decision |
+| Sex discrimination | Fairness / legal | **Mitigated** via group thresholds (0.80 → 0.96) |
+| Foreign-worker discrimination | Fairness / legal | Detected (DI 0.71); mitigation is a documented trade-off → policy decision |
 | Historical bias in labels | Data | Documented; model audited rather than trusted blindly |
 | Score gaming | Security | Quantified (evasion study); flag manipulable features |
 | Data poisoning | Security | Quantified; motivates data-pipeline integrity controls |

@@ -1,4 +1,4 @@
 Model,CV Recall (bad) mean,CV Recall (bad) std
 Logistic Regression,0.646,0.063
 Decision Tree,0.675,0.082
-Random Forest,0.704,0.078
+Random Forest,0.75,0.04
